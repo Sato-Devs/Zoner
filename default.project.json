@@ -1,0 +1,8 @@
+{
+  "name": "Zoner",
+  "emitLegacyScripts": false,
+  "tree": {
+    "$path": "src"
+  }
+
+}
