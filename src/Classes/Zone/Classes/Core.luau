@@ -18,7 +18,7 @@ local Players           = game:GetService('Players')
 --===========================================================================================================================>
 
 -- Reference the Top Level Module so that we can easily Index our Modules
-local ZonerModule = script:FindFirstAncestor('Zone').Parent.Parent
+local ZonerModule = script.Parent.Parent.Parent.Parent
 
 -- Require the Enum2 Module for Custom Enums:
 local Enums   = require(ZonerModule.Utility.Enums);

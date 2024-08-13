@@ -4,7 +4,7 @@
 -- Other Type Imports:
 
 -- Grab the ZonerModule Reference:
-local ZonerModule = script:FindFirstAncestor('ZonerModule')
+local ZonerModule = script.Parent.Parent
 
 -- Index and Require the Module From the Shared Folder:
 local TroveModule  = require(ZonerModule.Utility.Trove)

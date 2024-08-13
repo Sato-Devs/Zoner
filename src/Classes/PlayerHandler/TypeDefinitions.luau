@@ -4,7 +4,7 @@
 -- Other Type Imports:
 
 -- Grab the ZonerModule Reference:
-local ZonerModule = script:FindFirstAncestor('ZonerModule')
+local ZonerModule = script.Parent.Parent.Parent
 
 -- Require the Types:
 local PlayerHandlerTypes = require(ZonerModule.Types.PlayerHandlerTypes);

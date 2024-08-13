@@ -235,7 +235,7 @@ function ZoneModule._SetInstances(self: Zone)
 		self._CoreActor.Parent = nil
 
 		-- Cache the Script:
-		local Script: Script = self._CoreActor.Scripts:FindFirstChild(`ZoneCore:{self._RunScope}`) :: Script
+		local Script: Script = self._CoreActor.Scripts:FindFirstChild(`ZoneCore.{self._RunScope}`) :: Script
 
 		-- Name the ZoneCore Actor the Identifier of the ZoneCore + the RunScope:
 		self._CoreActor.Name = `{self._Identifier}:{self._RunScope}`
@@ -243,7 +243,7 @@ function ZoneModule._SetInstances(self: Zone)
 		Script.Name          = `{self._Identifier}:ZoneCore:{self._RunScope}`
 
 		-- Destroy the Other RunScope Script:
-		self._CoreActor.Scripts:FindFirstChild(`ZoneCore:{if self._RunScope == 'Client' then 'Server' else 'Client'}`):Destroy()
+		self._CoreActor.Scripts:FindFirstChild(`ZoneCore.{if self._RunScope == 'Client' then 'Server' else 'Client'}`):Destroy()
 
 		-- Parent the Actor to the CelestialBodies Folder:
 		self._CoreActor.Parent = self._ZonerFolder.Zones

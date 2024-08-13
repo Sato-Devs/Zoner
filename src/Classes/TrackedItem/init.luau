@@ -208,7 +208,7 @@ function TrackedItemModule._SetEvents(self: TrackedItem)
 
 			if not Descendant:IsA('BasePart') then return end
 
-			if not self:_IsPartValidForItem(Child) then return end
+			if not self:_IsPartValidForItem(Descendant) then return end
 
 			if not self._Parts[Descendant] then self._Parts[Descendant] = true end
 
@@ -598,7 +598,7 @@ function TrackedItemModule.IsInsideBoundBox(self: TrackedItem, BoundMin: Vector3
 		for Part: BasePart, State: boolean in pairs(self._Parts) do
 	
 			if Regions:IsPartFullyInsideBoundBox(Part, BoundMin, BoundMax) == false then
-				IsInside = false break
+				IsInside = false; break
 			end
 	
 		end
@@ -612,7 +612,7 @@ function TrackedItemModule.IsInsideBoundBox(self: TrackedItem, BoundMin: Vector3
 		for Part: BasePart, State: boolean in pairs(self._Parts) do
 
 			if Regions:IsPointInsideBoundBox(self:GetPosition(Part), BoundMin, BoundMax) == false then
-				IsInside = false break
+				IsInside = false; break
 			end
 
 		end
@@ -626,7 +626,7 @@ function TrackedItemModule.IsInsideBoundBox(self: TrackedItem, BoundMin: Vector3
 		for Part: BasePart, State: boolean in pairs(self._Parts) do
 
 			if Regions:IsPartTouchingBoundBox(Part, BoundMin, BoundMax) == true then
-				IsInside = true break
+				IsInside = true; break
 			end
 
 		end
@@ -640,7 +640,7 @@ function TrackedItemModule.IsInsideBoundBox(self: TrackedItem, BoundMin: Vector3
 		for Part: BasePart, State: boolean in pairs(self._Parts) do
 
 			if Regions:IsPartFullyInsideBoundBox(Part, BoundMin, BoundMax) == true then
-				IsInside = true break
+				IsInside = true; break
 			end
 
 		end
@@ -702,23 +702,6 @@ end
 
 --===========================================================================================================================>
 
-
---type ZoneParts = {BasePart};
-type ZonePartsData = {[BasePart]: ZonePartProperties}
-
-
-
-type ZoneParts = {[BasePart]: ZonePartProperties}
-
-type ZonePartProperties = {
-	--===============================>
-
-	Type: 'Complex' | 'Block' | 'Sphere';
-	
-	Bounds: {Min: Vector3; Max: Vector3}?
-	--===============================>
-}
-
 -- @Public
 -- Method to Update/Set the Default Part/TrackedItem Detection of the TrackedItem:
 function TrackedItemModule.IsInZonePart(self: TrackedItem, Properties: ZonePartProperties )
@@ -739,7 +722,7 @@ function TrackedItemModule.SetDetection(self: TrackedItem, NameOrId: number | En
 	local Detection: number | 'Failure' = Enums.Enums.Detection:GetValue(NameOrId)
 	
 	-- If Detection is Failure, then warn to User that the passed Name Or Id did not return a valid Enum.
-	if Detection == 'Failure' then warn(Constants.Logs.TrackedItem.SetDetection) return end
+	if Detection == 'Failure' then warn(Constants.Logs.TrackedItem.SetDetection); return end
 
 	-- Set the new Detection in the Setting Table:
 	-- If the Detection is Automatic, calculate what Detection the Item should have Automatically:

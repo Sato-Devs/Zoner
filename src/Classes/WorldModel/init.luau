@@ -26,15 +26,13 @@ local TypeDefinitions = require(script.TypeDefinitions)
 -- Insert Object type:
 export type WorldModelModule = TypeDefinitions.WorldModelModule
 
-type ZonerFolder = TypeDefinitions.ZonerFolder
-
 --===========================================================================================================================>
 --[ FUNCTIONS: ]
 -- Defined Functions for the WorldModel Module:
 
 
 -- Module Method to Create a WorldModel Instance or return the existing one:
-function WorldModelModule.SetupWorldModel(self: WorldModelModule, ZonerFolder: ZonerFolder): WorldModel
+function WorldModelModule.SetupWorldModel(self: WorldModelModule, ZonerFolder: TypeDefinitions.ZonerFolder): WorldModel
 	--=======================================================================================================>
 	if self.Values.WorldModel then return self.Values.WorldModel end
 	--=======================================================================================================>

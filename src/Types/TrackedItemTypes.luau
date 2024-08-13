@@ -3,7 +3,7 @@
 --=======================================================================================================>
 
 -- Grab the ZonerModule Reference:
-local ZonerModule = script:FindFirstAncestor('ZonerModule')
+local ZonerModule = script.Parent.Parent
 
 -- Require the Types:
 local Trove = require(ZonerModule.Utility.Trove);

@@ -3,7 +3,7 @@
 --=======================================================================================================>
 
 -- Grab the ZonerModule Reference:
-local ZonerModule = script:FindFirstAncestor('ZonerModule')
+local ZonerModule = script.Parent.Parent.Parent
 
 -- Import the Types:
 local ZoneTypes = require(ZonerModule.Types.ZoneTypes);

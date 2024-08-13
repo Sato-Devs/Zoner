@@ -3,7 +3,7 @@
 --=======================================================================================================>
 
 -- Grab the ZonerModule Reference:
-local ZonerModule = script:FindFirstAncestor('ZonerModule')
+local ZonerModule = script.Parent.Parent
 
 -- Require the Trove Module for Cleanup:
 local GoodSignalModule = require(ZonerModule.Utility.GoodSignal);
@@ -36,6 +36,16 @@ export type ZoneCoreActor = Actor & {
 	States:  Configuration;
 	Settings: Configuration;
 	ActiveTriggers: Configuration;
+}
+
+
+export type ZonePartProperties = {
+	--===============================>
+
+	Type: 'Complex' | 'Block' | 'Sphere';
+	
+	Bounds: {Min: Vector3; Max: Vector3}?
+	--===============================>
 }
 
 --=======================================================================================================>
@@ -198,8 +208,8 @@ export type ZoneMetaData = {
 	};
 
 	--====================================================>
-	_ZoneParts: {BasePart};
 	_Holders:   {Instance};
+	_ZoneParts: {BasePart};
 
 	_AllZonePartsAreBlocks: boolean;
 
@@ -327,7 +337,8 @@ export type ZoneCoreMetaData = {
 	--====================================================>
 	_WorldModel: WorldModelModule.WorldModelModule;
 	--====================================================>
-
+	_ZoneParts: {[BasePart]: ZonePartProperties};
+	--====================================================>
 	_Classes: {
 		PlayerHandler: PlayerHandlerTypes.PlayerHandler;
 	};
@@ -357,7 +368,6 @@ export type ZoneCoreMetaData = {
 	--};
 
 	_Instances: {
-		ZoneParts: {BasePart};
 		Holders:   {Instance};
 	};
 
@@ -440,7 +450,6 @@ export type ZoneCoreMetaData = {
 
 	_PlayerHandler: PlayerHandlerTypes.PlayerHandler;
 
-	_ZoneParts: {BasePart};
 	_Holders:   {Instance};
 
 	Region: Region3;

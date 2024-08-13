@@ -3,7 +3,7 @@
 --=======================================================================================================>
 
 -- Grab the ZonerModule Reference:
-local ZonerModule = script:FindFirstAncestor('ZonerModule')
+local ZonerModule = script.Parent.Parent
 
 -- Require the Trove Module for Cleanup:
 local EnumsModule      = require(ZonerModule.Utility.Enums);

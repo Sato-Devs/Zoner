@@ -318,7 +318,7 @@ function ZonerModule._SetEvents(self: Zoner)
 	self._Trove:Connect(self._ZonerFolder.Ids.AttributeChanged, function(Identifier: string)
 		--====================================================================================>
 		-- Get the Current Boolean State of the Identifier Attribute:
-		local ZoneState: boolean = self._ZonerFolder.Ids:GetAttribute(Identifier)
+		local ZoneState: boolean = self._ZonerFolder.Ids:GetAttribute(Identifier) :: boolean
 		-- If the ZoneState is not True, meaning false or nil, we remove the Zone:
 		if ZoneState ~= true then self:_RemoveZone(Identifier) end
 		--====================================================================================>
@@ -338,7 +338,7 @@ function ZonerModule._AddZone(self: Zoner, ...): Zone
 	local Identifier: string = Utility.Identifier(false, false, true, 9)
 
 	-- Check if a Zone with that ID is stored in the Zones Table, if so, warn and return:
-	if self._Zones[Identifier] then warn(`Could not Add Zone with Id: "{Identifier}" because Zone already exists!`) return nil :: any end
+	if self._Zones[Identifier] then warn(`Could not Add Zone with Id: "{Identifier}" because Zone already exists!`); return nil :: any end
 	
 	--=======================================================================================================>
 	
@@ -360,7 +360,7 @@ function ZonerModule._RemoveZone(self: Zoner, Identifier: string)
 	--=======================================================================================================>
 warn('remove zone!')
 	-- Check if a Zone with that ID is stored in the Zones Table, if not, warn and return:
-	if not self._Zones[Identifier] then warn(`Could not Remove Zone with Id: "{Identifier}" because Zone was not found!`) return end
+	if not self._Zones[Identifier] then warn(`Could not Remove Zone with Id: "{Identifier}" because Zone was not found!`); return end
 
 	--=======================================================================================================>
 	
