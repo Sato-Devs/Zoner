@@ -33,6 +33,7 @@ local PlayerHandler = require(ZonerModule.Classes.PlayerHandler);
 local Regions = require(ZonerModule.Utility.Regions);
 -- Require the Trove Module for Cleanup:
 local TrackedItem   = require(ZonerModule.Classes.TrackedItem);
+local Plagger       = require(ZonerModule.Classes.Plagger);
 
 -- Require the Trove Module for Cleanup:
 local ZoneConstants = require(script.Parent.Parent.Children.Constants);
@@ -53,11 +54,10 @@ export type ZoneCoreMetaData = TypeDefinitions.ZoneCoreMetaData
 export type ZoneCoreModule   = TypeDefinitions.ZoneCoreModule
 export type ZoneCore         = TypeDefinitions.ZoneCore
 
-
-export type ZoneContainer    = TypeDefinitions.ZoneContainer
-
--- Detections:
-type Triggers = 'Players'|'LocalPlayer'|'Parts'|'Items'
+export type ZonePartProperties = TypeDefinitions.ZonePartProperties
+export type ZoneContainer      = TypeDefinitions.ZoneContainer
+export type ZoneTriggers       = TypeDefinitions.ZoneTriggers
+export type ZoneParts          = TypeDefinitions.ZoneParts
 
 --===========================================================================================================================>
 --[ CONSTRUCTOR METHODS: ]
@@ -138,7 +138,6 @@ function ZoneCoreModule.New(Id: string, CoreActor: Actor, Container: ZoneContain
 
 			AllZonePartsAreBlocks = false;
 		} :: any;
-
 
 		_Updates = {
 			Region = false;
@@ -253,47 +252,18 @@ function ZoneCoreModule.SetData(self: ZoneCore)
 
 	--=======================================================================================================>
 
-	-- Grab the Attributes on the Folders and update our copy of them:
-	for Name: string, Value: any in pairs(self._CoreActor.States:GetAttributes()) do
+	-- Update each of the Folder Attribute Dictionaries by grabbing their attributes dynamically via the Array:
+	for Index: number, FolderName: string in ipairs({'States', 'Properties', 'Settings', 'ActiveTriggers'}) do
 		--================================================================================================>
-		-- If the Value is nil, continue:
-		if Value == nil then continue end
-		-- Set the Value to the Table:
-		self._States[Name] = Value
-		--================================================================================================>
-	end
-
-	-- Grab the Attributes on the Folders and update our copy of them:
-	for Name: string, Value: any in pairs(self._CoreActor.Properties:GetAttributes()) do
-		--================================================================================================>
-		-- If the Value is nil, continue:
-		if Value == nil then continue end
-		-- Set the Value to the Table:
-		self._Properties[Name] = Value
+		-- Find the Folder (Configuration) as a Child of the Actor using the Name String passed:
+		local Folder: Configuration = self._CoreActor:FindFirstChild(FolderName) :: Configuration
+		-- Grab the Attributes on the Folders and update our copy of them:
+		for Name: string, Value: any in Folder:GetAttributes() do self[`_{FolderName}`][Name] = Value end
 		--================================================================================================>
 	end
-
-	-- Grab the Attributes on the Folders and update our copy of them:
-	for Name: string, Value: any in pairs(self._CoreActor.Settings:GetAttributes()) do
-		--================================================================================================>
-		-- If the Value is nil, continue:
-		if Value == nil then continue end
-		-- Set the Value to the Table:
-		self._Settings[Name] = Value
-		--================================================================================================>
-	end
-
-	-- Grab the Attributes on the Folders and update our copy of them:
-	for Name: string, Value: any in pairs(self._CoreActor.ActiveTriggers:GetAttributes()) do
-		--================================================================================================>
-		-- If the Value is nil, continue:
-		if Value == nil then continue end
-		-- Set the Value to the Table:
-		self._ActiveTriggers[Name] = Value
-		--================================================================================================>
-	end
-
 	
+	--=======================================================================================================>
+
 	-- Run the Update Zone Method:
 	self:UpdateZone('All')
 
@@ -456,187 +426,79 @@ function ZoneCoreModule.GetZoneParts(self: ZoneCore): ({BasePart}, {Instance})
 end
 
 -- Initialization function to start/setup the Object's initial data:
-function ZoneCoreModule.AreZonePartsAllBlocks(self: ZoneCore, ZoneParts: {BasePart}): boolean
+function ZoneCoreModule.GetZonePartsFromContainer(self: ZoneCore, Container: any): ({BasePart}, {Instance})
 	--=======================================================================================================>
 
-	-- Define the Variable boolean as true:
-	local AllZonePartsAreBlocks: boolean = true
+	-- Define a ZoneParts array and a Holders Array:
+	local ZoneParts: {BasePart},  Holders: {Instance} = {}, {}
 
-	-- Loop through all the ZoneParts, checking each Block's Shape Name.
-	-- If any block does not have the Shape Name Block, then the boolean evaluates to false:
-	for Index: number, ZonePart: any in ipairs(ZoneParts) do
-		--=============================================================================>
-		-- If the ZonePart is a Part specifically, then check its Shape Name:
-		-- If the Shape name is not a block, then set bool to false and break loop:
-		-- Else Set bool to false and break loop:
-		if ZonePart:IsA('Part') then
-			if ZonePart.Shape.Name ~= "Block" then AllZonePartsAreBlocks = false break end
-		else
-			AllZonePartsAreBlocks = false break 
+	--=======================================================================================================>
+
+	-- Grab the String Type of the Container Variable:
+	local ContainerType: string = typeof(Container)
+
+	--=======================================================================================================>
+
+	-- If the Container Type is a Table, get all the ZoneParts from inside the Table:
+	-- Else if the Container Type is an Instance, get all the Decendants that are ZoneParts:
+	if ContainerType == "table" then
+		--============================================>
+		-- Loop through Table or Array of ZoneParts:
+		for Key, Part: BasePart in pairs(Container) do
+			-- If Part is a BasePart, insert as a ZonePart:
+			if Part:IsA("BasePart") then table.insert(ZoneParts, Part) end
 		end
-		--=============================================================================>
+		--============================================>
+	elseif ContainerType == "Instance" then
+		--============================================>
+		-- If the Container is a Single BasePart itself, insert it into ZoneParts:
+		-- Else Loop through all the Children of the Instance and Place the Instance as a Holder Instance:
+		if Container:IsA("BasePart") then
+			-- Container is a ZonePart, insert it:
+			table.insert(ZoneParts, Container)
+		else
+			--====================================>
+			-- Container is a Holder Instance, so insert it:
+			table.insert(Holders, Container)
+			--====================================>
+			-- Get all Descendants of Container:
+			local ContainerDescendants: {BasePart} = Container:GetDescendants()
+
+			-- Loop through all the descendants of the Container Holder to add as ZoneParts or Holders:
+			for Index: number, Part: BasePart in ipairs(ContainerDescendants) do
+				-- If its a BasePart, its a ZonePart, else a Holder:
+				if Part:IsA("BasePart") then
+					-- If Part is a BasePart, insert as a ZonePart:
+					table.insert(ZoneParts, Part)
+				else
+					-- If Part is anything else, insert as a Holder:
+					table.insert(Holders, Part)
+				end
+			end
+
+			-- Clear from Memory:
+			ContainerDescendants = nil :: any
+			--====================================>
+		end
+		--============================================>
 	end
 
-	-- If the Array is empty set variable to false:
-	if #ZoneParts < 1 then AllZonePartsAreBlocks = false end
+	--=======================================================================================================>
 
-	-- Return the boolean:
-	return AllZonePartsAreBlocks
-
+	-- Return the two filled Arrays (possibly):
+	return ZoneParts, Holders
 	--=======================================================================================================>
 end
 
 -- Initialization function to start/setup the Object's initial data:
-function ZoneCoreModule.GetCalculatedRegion(self: ZoneCore, ArrayOfParts: {BasePart}, DontRound: boolean?): (Region3, Vector3, Vector3)
+function ZoneCoreModule.GetZonePartsArray(self: ZoneCore, ZoneParts: ZoneParts): {BasePart}
 	--=======================================================================================================>
-
-	type BoundDetails = {
-		Values: {};
-
-		ParseCheck: 
-			(self: BoundDetails, Value1: number, Value2: number) -> boolean;
-		Parse: 
-			(self: BoundDetails, ValuesToParse: {number}) -> ();
-	};
-
-	type Bounds = {
-		Max: BoundDetails; Min: BoundDetails
-	}
-
-	--=======================================================================================================>
-
-	-- Define a Region3, BoundMin and BoundMax Vector3:
-	local Region: Region3, BoundMin: Vector3, BoundMax: Vector3
-
-	-- Define the MinBound and MaxBound Number Arrays:
-	local MinBound: {number}, MaxBound: {number} = {}, {}
-
-	-- Define the Bounds Dictionary:
-	local Bounds: Bounds = {["Min"] = {Values = {}}, ["Max"] = {Values = {}}} :: Bounds
-
-	--=======================================================================================================>
-
-	-- Rounding a regions coordinates to multiples of 4 ensures the region optimises the region
-	-- by ensuring it aligns on the voxel grid
-	local function RoundToFour(Value: number): number
-		--=============================================================================>
-		-- Round number constant:
-		local ROUND_TO: number = 4
-		-- Divide the Value:
-		local Divided: number = (Value + ROUND_TO/2) / ROUND_TO
-		-- Floor the Value and multiply:
-		local Rounded: number = ROUND_TO * math.floor(Divided)
-		-- Return rounded Number:
-		return Rounded
-		--=============================================================================>
-	end
-
-	--=======================================================================================================>
-
-	-- Loop through the Bounds and Add a Function to each Table:
-	for BoundType: string, Details in pairs(Bounds) do
-		--=============================================================================>
-		function Details:ParseCheck(Value1: number, Value2: number): boolean
-			--=================================================>
-			if BoundType == "Min" then
-				return (Value1 <= Value2)
-			elseif BoundType == "Max" then
-				return (Value1 >= Value2)
-			else
-				return true
-			end
-			--=================================================>
-		end
-
-		function Details:Parse(ValuesToParse: {number})
-			--=================================================>
-			for Index: number, Value: number in ipairs(ValuesToParse) do
-				local CurrentValue: number = self.Values[Index] or Value
-				if self:ParseCheck(Value, CurrentValue) then
-					self.Values[Index] = Value
-				end
-			end
-			--=================================================>
-		end
-		--=============================================================================>
-	end
-
-	-- Loop through the Array of Parts to calculate and parse their bounds:
-	for Index: number, Part: BasePart in ipairs(ArrayOfParts) do
-		--=============================================================================>
-		-- Get half the Size of the Part:
-		local SizeHalf: Vector3 = Part.Size * 0.5
-
-		-- Create an Array of all the Corners of the Part:
-		local Corners: {CFrame} = {
-			Part.CFrame * CFrame.new(-SizeHalf.X, -SizeHalf.Y, -SizeHalf.Z),
-			Part.CFrame * CFrame.new(-SizeHalf.X, -SizeHalf.Y,  SizeHalf.Z),
-			Part.CFrame * CFrame.new(-SizeHalf.X,  SizeHalf.Y, -SizeHalf.Z),
-			Part.CFrame * CFrame.new(-SizeHalf.X,  SizeHalf.Y,  SizeHalf.Z),
-			Part.CFrame * CFrame.new( SizeHalf.X, -SizeHalf.Y, -SizeHalf.Z),
-			Part.CFrame * CFrame.new( SizeHalf.X, -SizeHalf.Y,  SizeHalf.Z),
-			Part.CFrame * CFrame.new( SizeHalf.X,  SizeHalf.Y, -SizeHalf.Z),
-			Part.CFrame * CFrame.new( SizeHalf.X,  SizeHalf.Y,  SizeHalf.Z),
-		}
-
-		-- Loop through the Array of Corner CFrames:
-		for Index: number, CornerCFrame: CFrame in ipairs(Corners) do
-			--================================================================>
-			-- Get the first 3 Values of the CFrame Components:
-			local X: number, Y: number, Z: number = CornerCFrame:GetComponents()
-			-- Put the three Values into an Array for Parsing:
-			local AxisValues: {number} = {X, Y, Z}
-			--================================================================>
-			-- Call the Parse Function on the Min:
-			Bounds.Min:Parse(AxisValues)
-			-- Call the Parse Function on the Max:
-			Bounds.Max:Parse(AxisValues)
-			--================================================================>
-		end
-
-		--=============================================================================>
-	end
-
-	-- Loop through the Bounds again to Fill the MinBound and MaxBound Arrays:
-	for BoundType: string, BoundDetail in pairs(Bounds) do
-		--=============================================================================>
-		-- Loop through the Values Array:
-		for Index: number, Value: number in ipairs(BoundDetail.Values) do
-			--=====================================================================>
-			-- New Bound Table Reference:
-			local NewBoundTable = (BoundType == "Min" and MinBound) or MaxBound
-			-- Create a new Reference Variable to the Value so it can be manipulated:
-			local NewValue: number = Value
-			--=====================================================================>
-			-- If the DountRound Boolean is false, then Round to the fourth place:
-			if DontRound == false or DontRound == nil then
-				-- Create a RoundOffset:
-				local RoundOffset: number = (BoundType == "Min" and -2) or 2
-				-- +-2 to ensures the zones region is not rounded down/up
-				NewValue = RoundToFour(Value + RoundOffset)
-			end
-			--=====================================================================>
-			-- Insert the NewValue into the NewBoundTable:
-			table.insert(NewBoundTable, NewValue)
-			--=====================================================================>
-		end
-		--=============================================================================>
-	end
-
-	--=======================================================================================================>
-
-	-- Unpack the MinBound Array into a Vector3 and Set to BoundMin:
-	BoundMin = Vector3.new(unpack(MinBound))
-	-- Unpack the MaxBound Array into a Vector3 and Set to BoundMax:
-	BoundMax = Vector3.new(unpack(MaxBound))
-	-- Use Both BoundMin and BoundMax Vector3's to construct a Region3:
-	Region = Region3.new(BoundMin, BoundMax)
-
-	--=======================================================================================================>
-
-	-- Return the Region3 and BoundMin and BoundMax Vector3s:
-	return Region, BoundMin, BoundMax
-
+	-- Define a ZoneParts Array:
+	local ZonePartsArray: {BasePart} = {}
+	-- Loop through ZonePart Dictionary taking every Part to add to Array:
+	for Part: BasePart, Properties: ZonePartProperties in ZoneParts do table.insert(ZonePartsArray, Part) end
+	-- Return Array:
+	return ZonePartsArray
 	--=======================================================================================================>
 end
 
@@ -645,7 +507,7 @@ end
 
 
 -- Initialization function to start/setup the Object's initial data:
-function ZoneCoreModule.UpdateTrigger(self: ZoneCore, Trigger: Triggers, State: boolean)
+function ZoneCoreModule.UpdateTrigger(self: ZoneCore, Trigger: ZoneTriggers, State: boolean)
 	--=======================================================================================================>
 
 	-- CREATION OF PLAYERHANDLER:
@@ -674,7 +536,7 @@ function ZoneCoreModule.UpdateTrigger(self: ZoneCore, Trigger: Triggers, State: 
 			--=======================================================================================>
 
 			-- Cache the Character Tag:
-			local CharacterTag = self._PlayerHandler.Tags.ServerCharacter
+			local CharacterTag = self._PlayerHandler._Tags.ServerCharacter
 
 			-- Connect to the Character Tag Added Signal:
 			-- Fires when a Part with the Character Tag is added back to the Workspace:
@@ -777,7 +639,7 @@ function ZoneCoreModule.UpdateTrigger(self: ZoneCore, Trigger: Triggers, State: 
 			--=======================================================================================>
 
 			-- Cache the Character Tag:
-			local CharacterTag = self._PlayerHandler.Tags.ServerCharacter
+			local CharacterTag = self._PlayerHandler._Tags.ServerCharacter
 
 			-- Connect to the Character Tag Added Signal:
 			-- Fires when a Part with the Character Tag is added back to the Workspace:
@@ -888,15 +750,18 @@ function ZoneCoreModule.UpdateZone(self: ZoneCore, Purpose: 'Parts'|'Region'|'Al
 		--=======================================================================================>
 
 		-- Grab the ZoneParts and Holders Array from the current Container:
-		self._Instances.ZoneParts, self._Instances.Holders = self:GetZoneParts()
+		local ZoneParts: {BasePart}, Holders: {Instance} = self:GetZoneParts()
+
+		-- Set the Holders:
+		self._Instances.Holders = Holders
 
 		-- Fire The ZonePartsUpdate Event to Update the ZoneParts and Holders in Serial in the Parent Object:
 		if #self._Holders > 0 then self._Events.HoldersUpdate:Fire(self._Holders) end
 
 		--=======================================================================================>
-
+		
 		-- Determine whether the ZoneParts are all Blocks:
-		self._Properties.AllZonePartsAreBlocks = self:AreZonePartsAllBlocks(self._ZoneParts)
+		self._Properties.AllZonePartsAreBlocks = Regions:ArePartsAllBlocks(self:GetZonePartsArray(self._ZoneParts))
 
 		--=======================================================================================>
 
@@ -907,20 +772,23 @@ function ZoneCoreModule.UpdateZone(self: ZoneCore, Purpose: 'Parts'|'Region'|'Al
 		task.synchronize()
 
 		-- Loop through the ZoneParts to add tags:
-		for Index: number, ZonePart in ipairs(self._Instances.ZoneParts) do
+		for Index: number, Part: BasePart in ipairs(ZoneParts) do
 			-- If the Part already has a Tag, then continue:
-			if ZonePart:HasTag(self._Tags.ZonePart) then continue end
+			if Part:HasTag(self._Tags.ZonePart) then continue end
 			-- Add the ZonePart tag to the ZonePart:
-			ZonePart:AddTag(self._Tags.ZonePart)
+			Part:AddTag(self._Tags.ZonePart)
 		end
 
 		--=======================================================================================>
 	elseif Purpose == 'Region' then
 		--=======================================================================================>
+		
+		local ZoneParts = self:GetZonePartsArray(self._ZoneParts)
+		
 		-- Get the Region, BoundMin and BoundMax
 		self._Properties.Region, self._Properties.BoundMin, self._Properties.BoundMax = 
-			self:GetCalculatedRegion(self._ZoneParts)
-
+			Regions:GetCalculatedPartToRegion(ZoneParts)
+		
 		-- Get the Size of the Region3:
 		local RegionSize: Vector3 = self._Properties.Region.Size
 		-- Calculate the Volume of the Region Via the Rounded Region's Size:
@@ -929,7 +797,7 @@ function ZoneCoreModule.UpdateZone(self: ZoneCore, Purpose: 'Parts'|'Region'|'Al
 
 		-- Get the ExactRegion Region3:
 		self._Properties.Exact_Region, self._Properties.Exact_BoundMin, self._Properties.Exact_BoundMax = 
-			self:GetCalculatedRegion(self._ZoneParts, true)
+			Regions:GetCalculatedPartToRegion(ZoneParts, true)
 		
 		-- Set its Value:
 		self._Properties.ExactRegion_CFrame = self._Properties.Exact_Region.CFrame
@@ -955,14 +823,14 @@ function ZoneCoreModule.UpdateZone(self: ZoneCore, Purpose: 'Parts'|'Region'|'Al
 
 		-- Loop through all the ZoneParts and Connect ProperyChanged Connections for Size and Position.
 		-- Update the Regions if their Properties Change:
-		for Index: number, ZonePart in ipairs(self._ZoneParts) do
+		for Part: BasePart, Properties: ZonePartProperties in self._ZoneParts do
 			--=============================================================================>
 
-			self._PartTrove:ConnectParallel(ZonePart:GetPropertyChangedSignal('Size'), function()
+			self._PartTrove:ConnectParallel(Part:GetPropertyChangedSignal('Size'), function()
 				self:UpdateZone('Region')
 			end)
 
-			self._PartTrove:ConnectParallel(ZonePart:GetPropertyChangedSignal('Position'), function()
+			self._PartTrove:ConnectParallel(Part:GetPropertyChangedSignal('Position'), function()
 				self:UpdateZone('Region')
 			end)
 
@@ -1016,7 +884,7 @@ function ZoneCoreModule.UpdateDetection(self: ZoneCore, Detection: number)
 	--=======================================================================================================>
 
 	-- Loop through the Player TrackedItems:
-	for Name: string, TrackedPlayer in pairs(self._Trackers.Players) do
+	for Name: string, TrackedPlayer in self._Trackers.Players do
 		-- Call the Detection Set Method on the Tracked Object:
 		TrackedPlayer:SetDetection(Detection)
 	end
@@ -1024,7 +892,7 @@ function ZoneCoreModule.UpdateDetection(self: ZoneCore, Detection: number)
 	--=======================================================================================================>
 end
 
--- Function that is called when the Simulation Setting is updated:
+--- Function that is called when the Simulation Setting is updated:
 function ZoneCoreModule.UpdateSimulation(self: ZoneCore, Simulation: number)
 	--=======================================================================================================>
 
@@ -1034,11 +902,11 @@ function ZoneCoreModule.UpdateSimulation(self: ZoneCore, Simulation: number)
 	--=======================================================================================================>
 
 	-- Grab the Detection Number Vlaue:
-	local Simulation: Enums.Simulations = Enums.Enums.Simulation:GetName(Simulation) :: any
+	local ZoneSimulation: Enums.Simulations = Enums.Enums.Simulation:GetName(Simulation) :: any
 
 	-- Dont allow PreRender to be set on the Server:
-	if Simulation == 'PreRender' and self._RunScope == 'Server' then
-		warn('Failed to Update Simulation: "PreRender" cannot be used on the Server') return
+	if ZoneSimulation == 'PreRender' and self._RunScope == 'Server' then
+		warn('Failed to Update Simulation: "PreRender" cannot be used on the Server'); return
 	end
 
 	--=======================================================================================================>
@@ -1047,33 +915,29 @@ function ZoneCoreModule.UpdateSimulation(self: ZoneCore, Simulation: number)
 	self._SimulationTrove:Destroy()
 
 	-- Connect to the RunService PostSimulation (Heartbeat) event:
-	self._SimulationTrove:ConnectParallel(RunService[Simulation], function(DeltaTime: number)
+	self._SimulationTrove:ConnectParallel(RunService[ZoneSimulation], function(DeltaTime: number)
 		self:OnSimulation('Desync', DeltaTime)
 	end)
 
 	--=======================================================================================================>
 end
 
--- Function that is called when the Accuracy Setting is updated:
+--- Function that is called when the Accuracy Setting is updated:
 function ZoneCoreModule.UpdateAccuracy(self: ZoneCore, Accuracy: number)
 	--=======================================================================================================>
 
 	-- Grab the AccuracyRate Number Vlaue:
-	local Accuracy: Enums.Accuracies = Enums.Enums.Accuracy:GetValue(Accuracy)
-
-	--=======================================================================================================>
-
-	print(Accuracy)
+	local ZoneAccuracy: Enums.Accuracies = Enums.Enums.Accuracy:GetValue(Accuracy)
 
 	--=======================================================================================================>
 end
 
--- Function that is called when the Rate Setting is updated:
+--- Function that is called when the Rate Setting is updated:
 function ZoneCoreModule.UpdateRate(self: ZoneCore, Rate: number)
 	--=======================================================================================================>
 
 	-- Grab the AccuracyRate Number Vlaue:
-	local Rate: number = Enums.Enums.Rate:GetProperty(Rate) :: number
+	Rate = Enums.Enums.Rate:GetProperty(Rate) :: number
 
 	--=======================================================================================================>
 
@@ -1084,11 +948,32 @@ function ZoneCoreModule.UpdateRate(self: ZoneCore, Rate: number)
 end
 
 --===========================================================================================================================>
+
+--- Function that is called to Create/Clear a Tracker Dictionary:
+function ZoneCoreModule.UpdateTracker(self: ZoneCore, Tracker: 'Players'|'Items', State: boolean)
+	--=======================================================================================================>
+
+	-- If the Tracker is of the 'Players' type:
+	if Tracker == 'Players' then
+
+		-- If the State is true, then we are creating a Dictionary to store the Tracker Data:
+		if State == true then
+
+		else
+		
+		end
+
+	end
+
+	--=======================================================================================================>
+end
+
+--===========================================================================================================================>
 --[ ZONE COMPUTATION METHODS: ]
 
 
 -- Method called when a ZonePart tag is added or removed:
-function ZoneCoreModule.CheckTrigger(self: ZoneCore, Trigger: Triggers)
+function ZoneCoreModule.CheckTrigger(self: ZoneCore, Trigger: ZoneTriggers)
 	--=======================================================================================================>
 
 	-- Begin Profiling:
@@ -1103,7 +988,7 @@ function ZoneCoreModule.CheckTrigger(self: ZoneCore, Trigger: Triggers)
 		--=============================================================================================>
 
 		-- Loop through the CurrentPartsInZone:
-		for Part: BasePart, State: boolean in pairs(self._PartData.CurrentPartsInZone) do
+		for Part: BasePart, State: boolean in self._PartData.CurrentPartsInZone do
 			--===============================================================================>
 			-- If the CurrentPart was NOT in the Zone Previously:
 			-- Then Add the Part to the Array of Parts that have just now ENTERED:
@@ -1114,7 +999,7 @@ function ZoneCoreModule.CheckTrigger(self: ZoneCore, Trigger: Triggers)
 		end
 
 		-- Loop through the CurrentPartsInZone:
-		for Part: BasePart, State: boolean in pairs(self._PartData.PreviousPartsInZone) do
+		for Part: BasePart, State: boolean in self._PartData.PreviousPartsInZone do
 			--===============================================================================>
 			-- If the PreviousPart is now NOT in the Current Zone Parts:
 			-- Then Add the Part to the Array of Parts that have just now EXITED:
@@ -1151,7 +1036,7 @@ function ZoneCoreModule.CheckTrigger(self: ZoneCore, Trigger: Triggers)
 		--=============================================================================================>
 
 		-- Loop through the CurrentPartsInZone:
-		for Name: string, TrackedPlayer in pairs(self._Trackers.Players) do
+		for Name: string, TrackedPlayer in self._Trackers.Players do
 			--===============================================================================>
 
 			-- Get the Boolean as to where this TrackedItem is currently:
@@ -1198,7 +1083,7 @@ function ZoneCoreModule.CheckTrigger(self: ZoneCore, Trigger: Triggers)
 		local Players: {[string]: Player} = self._PlayerHandler:GetPlayers()
 		
 		-- Loop through the CurrentPartsInZone:
-		for Name: string, TrackedPlayer in pairs(self._Trackers.Players) do
+		for Name: string, TrackedPlayer in self._Trackers.Players do
 			--===============================================================================>
 			
 			-- Get the Boolean as to where this TrackedItem is currently:
@@ -1252,7 +1137,7 @@ function ZoneCoreModule.CheckTrigger(self: ZoneCore, Trigger: Triggers)
 end
 
 -- Method called when a ZonePart tag is added or removed:
-function ZoneCoreModule.CheckZone(self: ZoneCore, Trigger: Triggers)
+function ZoneCoreModule.CheckZone(self: ZoneCore, Trigger: ZoneTriggers)
 	--=======================================================================================================>
 
 	-- Begin Profiling:
@@ -1263,7 +1148,7 @@ function ZoneCoreModule.CheckZone(self: ZoneCore, Trigger: Triggers)
 
 		table.clear(self._PartData.PreviousPartsInZone)
 
-		for Part: BasePart, State: boolean in pairs(self._PartData.CurrentPartsInZone) do
+		for Part: BasePart, State: boolean in self._PartData.CurrentPartsInZone do
 			self._PartData.PreviousPartsInZone[Part] = State
 		end
 
@@ -1371,7 +1256,7 @@ function ZoneCoreModule.OnZonePartUpdate(self: ZoneCore, Purpose: 'Add'|'Remove'
 	--=======================================================================================================>
 
 	-- Determine whether the ZoneParts are all Blocks:
-	self._Properties.AllZonePartsAreBlocks = self:AreZonePartsAllBlocks(self._ZoneParts)
+	self._Properties.AllZonePartsAreBlocks = Regions:ArePartsAllBlocks(self:GetZonePartsArray(self._ZoneParts))
 
 	-- Set the boolean to true to Update the Attribute Properties in Serial:
 	self._Updates.Parts = true
@@ -1449,8 +1334,8 @@ function ZoneCoreModule.OnSimulation(self: ZoneCore, Type: 'Sync'|'Desync', Delt
 			
 		-- Loop through the ActiveTriggers Dictionary, checking the State of whether its Active:
 		-- If it is Active, Call the CheckZone Method for that Trigger, followed by calling the CheckTrigger Method:
-		for Trigger: Triggers, State: boolean in pairs(self._ActiveTriggers) do
-			if State == true then self:CheckZone(Trigger) self:CheckTrigger(Trigger) end
+		for Trigger: ZoneTriggers, State: boolean in pairs(self._ActiveTriggers) do
+			if State == true then self:CheckZone(Trigger); self:CheckTrigger(Trigger) end
 		end
 
 		--==============================================================================================>

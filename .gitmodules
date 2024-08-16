@@ -1,0 +1,3 @@
+[submodule "src/Classes/Plagger"]
+	path = src/Classes/Plagger
+	url = https://github.com/Sato-Devs/Plagger.git

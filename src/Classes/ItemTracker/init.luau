@@ -10,10 +10,10 @@
 --===========================================================================================================================>
 
 -- Define Module table:
-local TrackedItemModule: TrackedItemModule = {} -- :: TrackedItemModule
+local ItemTrackerModule = {} -- :: ItemTrackerModule
 
 -- Set the MetaIndex:
-TrackedItemModule.__index = TrackedItemModule
+ItemTrackerModule.__index = ItemTrackerModule
 
 --===========================================================================================================================>
 
@@ -41,12 +41,12 @@ local WorldModel = require(ZonerModule.Classes.WorldModel);
 
 
 -- This will inject all types into this context.
-local TypeDefinitions = require(script.TypeDefinitions)
+local TypeDefinitions = require(script.Types)
 
 -- Insert Object type:
-export type TrackedItemMetaData = TypeDefinitions.TrackedItemMetaData
-export type TrackedItemModule   = TypeDefinitions.TrackedItemModule
-export type TrackedItem         = TypeDefinitions.TrackedItem
+export type ItemTrackerMetaData = TypeDefinitions.ItemTrackerMetaData
+export type ItemTrackerModule   = typeof(ItemTrackerModule)
+export type ItemTracker         = TypeDefinitions.ItemTracker
 
 export type TrackableItem       = TypeDefinitions.TrackableItem
 
@@ -56,7 +56,7 @@ export type TrackableItem       = TypeDefinitions.TrackableItem
 
 -- @Public
 -- Constructor Function for this individual object:
-function TrackedItemModule.New(Item: TrackableItem, Detection: number?): TrackedItem
+function ItemTrackerModule.New<TrackableItem>(Item: TrackableItem, Detection: number?): ItemTracker
 	--=======================================================================================================>
 	-- Assert that the Trackable Item must be an Instance:
 	assert(typeof(Item) == "Instance",                                Constants.Logs.TrackedItem.ItemType)
@@ -72,7 +72,7 @@ function TrackedItemModule.New(Item: TrackableItem, Detection: number?): Tracked
 	--=======================================================================================================>
 
 	-- Define Enum2 Data
-	local TrackedItemData: TrackedItemMetaData = {
+	local ItemTrackerData: ItemTrackerMetaData = {
 		--==========================>
 		_Item = Item;
 		--==========================>
@@ -89,27 +89,27 @@ function TrackedItemModule.New(Item: TrackableItem, Detection: number?): Tracked
 		-- Set Default Detection to Center:
 		_Detection = Detection or Enums.Enums.Detection.Automatic
 		--==========================>
-	} :: TrackedItemMetaData
+	} :: ItemTrackerMetaData
 
 	--=======================================================================================================>
 
 	-- Set Metatable to the MetaTable and the current Enum2Table:
-	setmetatable(TrackedItemData, TrackedItemModule)
+	setmetatable(ItemTrackerData, ItemTrackerModule)
 
 	-- Initialize the Object:
-	TrackedItemData:_Initialize()
+	ItemTrackerData:_Initialize()
 
 	--=======================================================================================================>
 
 	-- Return the MetaTable Data
-	return TrackedItemData
+	return ItemTrackerData
 
 	--=======================================================================================================>
 end
 
 -- @Public
 -- Destroyer Function which clears the entirity of the Data for the Object:
-function TrackedItemModule.Destroy(self: TrackedItem)
+function ItemTrackerModule.Destroy(self: ItemTracker)
 	--=======================================================================================================>
 
 	if self._Trove then self._Trove:Destroy() end
@@ -129,13 +129,13 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule._Initialize(self: TrackedItem)
+function ItemTrackerModule._Initialize(self: ItemTracker)
 	for Index: number, Function: string in ipairs({'_SetData', '_SetEvents'}) do self[Function](self) end
 end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule._SetData(self: TrackedItem)
+function ItemTrackerModule._SetData(self: ItemTracker)
 	--=======================================================================================================>
 
 
@@ -198,7 +198,7 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial events:
-function TrackedItemModule._SetEvents(self: TrackedItem)
+function ItemTrackerModule._SetEvents(self: ItemTracker)
 	--=======================================================================================================>
 
 	if self._IsAModel then
@@ -253,7 +253,7 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule._GetDetection(self: TrackedItem): number
+function ItemTrackerModule._GetDetection(self: ItemTracker): number
 	--=======================================================================================================>
 
 	local Detection: number
@@ -334,7 +334,7 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule._GetCenterPart(self: TrackedItem): BasePart
+function ItemTrackerModule._GetCenterPart(self: ItemTracker): BasePart
 	--=======================================================================================================>
 	-- Define the CenterPart Variable:
 	local CenterPart: BasePart
@@ -360,7 +360,7 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule._GetFilterDescendants(self: TrackedItem, Parts: {[BasePart]: boolean}): {BasePart}
+function ItemTrackerModule._GetFilterDescendants(self: ItemTracker, Parts: {[BasePart]: boolean}): {BasePart}
 	--=======================================================================================================>
 
 	-- Define the FilterDescendants Array:
@@ -386,7 +386,7 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule._IsPartValidForItem(self: TrackedItem, Part: BasePart): boolean
+function ItemTrackerModule._IsPartValidForItem(self: ItemTracker, Part: BasePart): boolean
 	--=======================================================================================================>
 	-- Dont allow Accessory Parts to be registered and checked:
 	if Part.Parent and Part.Parent:IsA('Accessory') then return false end
@@ -411,7 +411,7 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule.GetFilterDescendants(self: TrackedItem): {BasePart}
+function ItemTrackerModule.GetFilterDescendants(self: ItemTracker): {BasePart}
 	--=======================================================================================================>
 
 	-- Define the FilterDescendants Array:
@@ -427,7 +427,7 @@ end
 -- @Public
 -- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.DictionaryHasTrackedParts(self: TrackedItem, Dictionary: {[BasePart]: boolean}): boolean
+function ItemTrackerModule.DictionaryHasTrackedParts(self: ItemTracker, Dictionary: {[BasePart]: boolean}): boolean
 	--=======================================================================================================>
 	-- Loop through the Tracked Item Parts Dictionary checking each to see if they are in the passed Dictionary:
 	-- If one is, break the loop by returning true:
@@ -443,7 +443,7 @@ end
 -- @Public
 -- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.ArrayHasTrackedParts(self: TrackedItem, Array: {BasePart}): boolean
+function ItemTrackerModule.ArrayHasTrackedParts(self: ItemTracker, Array: {BasePart}): boolean
 	--=======================================================================================================>
 	-- Loop through the Array checking each to see if they are in the Tracked Parts Dictionary:
 	-- If one is, break the loop by returning true:
@@ -463,7 +463,7 @@ end
 -- @Public
 -- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.GetBoundingBox(self: TrackedItem, Array: {BasePart}): boolean
+function ItemTrackerModule.GetBoundingBox(self: ItemTracker, Array: {BasePart}): boolean
 	--=======================================================================================================>
 
 
@@ -489,7 +489,7 @@ end
 -- @Public
 -- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.GetZonePartResults(self: TrackedItem, ZonePart: BasePart): RaycastResult?
+function ItemTrackerModule.GetZonePartResults(self: ItemTracker, ZonePart: BasePart): RaycastResult?
 	--=======================================================================================================>
 	return workspace:Shapecast(ZonePart, Vector3.zero, self._RaycastParamaters)
 	--=======================================================================================================>
@@ -498,7 +498,7 @@ end
 -- @Public
 -- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.GetZonePartParts(self: TrackedItem, ZonePart: BasePart): {Instance}
+function ItemTrackerModule.GetZonePartParts(self: ItemTracker, ZonePart: BasePart): {Instance}
 	--=======================================================================================================>
 	return WorldModel:GetPartsInPart(ZonePart, self._OverlapParamaters)
 	--=======================================================================================================>
@@ -507,7 +507,7 @@ end
 -- @Public
 -- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.GetPartsInRegion(self: TrackedItem, RegionCFrame: CFrame, RegionSize: Vector3): {Instance}
+function ItemTrackerModule.GetPartsInRegion(self: ItemTracker, RegionCFrame: CFrame, RegionSize: Vector3): {Instance}
 	--=======================================================================================================>'
 	return WorldModel:GetPartBoundsInBox(RegionCFrame, RegionSize, self._OverlapParamaters)
 	--=======================================================================================================>
@@ -518,7 +518,7 @@ end
 -- @Public
 -- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.GetPosition(self: TrackedItem, Part: BasePart?): Vector3
+function ItemTrackerModule.GetPosition(self: ItemTracker, Part: BasePart?): Vector3
 	--=======================================================================================================>
 
 	-- If the Item is a Model, get the Position of the Model based on the PrimaryPart or Pivot, else just get the Position of the BasePart:
@@ -556,10 +556,10 @@ end
 -- IsInsidePart
 -- IsInside
 
--- @Public
--- Initialization function to start/setup the Object's initial data:
+--- @Public
+--- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.IsInsideRegion(self: TrackedItem, Region: Region3?, RegionCFrame: CFrame?, RegionSize: Vector3?): boolean
+function ItemTrackerModule.IsInsideRegion(self: ItemTracker, Region: Region3?, RegionCFrame: CFrame?, RegionSize: Vector3?): boolean
 	--=======================================================================================================>
 	-- Return the boolean from the IsInsideBoundBox Method:
 	-- Use the Passed RegionCFrame and RegionSize to get the BoundingBox if they were passed, else use the passed Region3:
@@ -569,10 +569,10 @@ function TrackedItemModule.IsInsideRegion(self: TrackedItem, Region: Region3?, R
 	--=======================================================================================================>
 end
 
--- @Public
--- Initialization function to start/setup the Object's initial data:
+--- @Public
+--- Initialization function to start/setup the Object's initial data:
 @native
-function TrackedItemModule.IsInsideBoundBox(self: TrackedItem, BoundMin: Vector3, BoundMax: Vector3): boolean
+function ItemTrackerModule.IsInsideBoundBox(self: ItemTracker, BoundMin: Vector3, BoundMax: Vector3): boolean
 	--=======================================================================================================>
 
 	-- Get the Detection String using the Objects Detection Enum:
@@ -704,18 +704,16 @@ end
 
 -- @Public
 -- Method to Update/Set the Default Part/TrackedItem Detection of the TrackedItem:
-function TrackedItemModule.IsInZonePart(self: TrackedItem, Properties: ZonePartProperties )
+function ItemTrackerModule.IsInZonePart(self: ItemTracker, Properties: ZonePartProperties )
 	--=======================================================================================================>
-
 
 	--=======================================================================================================>
 end
 
 
-
 -- @Public
 -- Method to Update/Set the Default Part/TrackedItem Detection of the TrackedItem:
-function TrackedItemModule.SetDetection(self: TrackedItem, NameOrId: number | Enums.Detections)
+function ItemTrackerModule.SetDetection(self: ItemTracker, NameOrId: number | Enums.Detections)
 	--=======================================================================================================>
 	
 	-- Grab the Detection Number Vlaue:
@@ -735,13 +733,13 @@ end
 
 -- @Private
 -- Initialization function to start/setup the Object's initial data:
-function TrackedItemModule.FindPartInArray(self: TrackedItem, Part: BasePart, Array: {BasePart}): number?
+function ItemTrackerModule.FindPartInArray(self: ItemTracker, Part: BasePart, Array: {BasePart}): number?
 	return table.find(Array, Part)
 end
 
 --===========================================================================================================================>
 
 -- Return a Frozen Module Table:
-return table.freeze(TrackedItemModule) :: TrackedItemModule
+return table.freeze(ItemTrackerModule) :: ItemTrackerModule
 
 --===========================================================================================================================>

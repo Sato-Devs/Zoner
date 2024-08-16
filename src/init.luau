@@ -463,7 +463,23 @@ end
 
 --===========================================================================================================================>
 
+local Zoner = ZonerModule._Start()
+
+local function NewFromContainer(Container: ZoneContainer, Accuracy: number?, Detection: number?): Zone 
+	return Zoner:NewZoneFromContainer(Container, Accuracy, Detection) 
+end
+
+local function NewZoneFromRegion(RegionCFrame: CFrame, RegionSize: Vector3, Accuracy: number?, Detection: number?): Zone 
+	return Zoner:NewZoneFromRegion(RegionCFrame, RegionSize, Accuracy, Detection) 
+end
+
+return table.freeze({
+	NewFromContainer  = NewFromContainer;
+	NewZoneFromRegion = NewZoneFromRegion;
+	New               = NewFromContainer;
+})
+
 -- Return the Module Constructed as an Object and Frozen:
-return table.freeze(ZonerModule._Start()) :: Zoner
+--return table.freeze(ZonerModule._Start()) :: Zoner
 
 --===========================================================================================================================>

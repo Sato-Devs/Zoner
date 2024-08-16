@@ -10,11 +10,9 @@ local GoodSignalModule = require(ZonerModule.Utility.GoodSignal);
 local EnumsModule      = require(ZonerModule.Utility.Enums);
 local TroveModule      = require(ZonerModule.Utility.Trove);
 
--- Require the Trove Module for Cleanup:
-local TrackedItemModule = require(ZonerModule.Classes.TrackedItem);
-local WorldModelModule = require(ZonerModule.Classes.WorldModel);
-
 local PlayerHandlerTypes = require(script.Parent.PlayerHandlerTypes);
+local TrackedItemTypes   = require(script.Parent.TrackedItemTypes);
+local WorldModelTypes    = require(script.Parent.WorldModelTypes);
 
 --=======================================================================================================>
 
@@ -38,7 +36,7 @@ export type ZoneCoreActor = Actor & {
 	ActiveTriggers: Configuration;
 }
 
-
+-- Create and Export Type:
 export type ZonePartProperties = {
 	--===============================>
 
@@ -47,6 +45,12 @@ export type ZonePartProperties = {
 	Bounds: {Min: Vector3; Max: Vector3}?
 	--===============================>
 }
+
+-- Create and Export Type:
+export type ZoneParts = {[BasePart]: ZonePartProperties}
+
+-- Create and Export Type:
+export type ZoneTriggers = 'Players'|'LocalPlayer'|'Parts'|'Items'
 
 --=======================================================================================================>
 
@@ -327,6 +331,9 @@ export type ZoneCoreMetaData = {
 	--====================================================>
 	_SimulationTrove:   TroveModule.Trove;
 	--====================================================>
+	_Identifier: string;
+	_Container:  ZoneContainer;
+	--====================================================>
 	_TriggerTroves: {
 		Players     : TroveModule.Trove;
 		LocalPlayer : TroveModule.Trove;
@@ -335,9 +342,9 @@ export type ZoneCoreMetaData = {
 	--====================================================>
 	_RunScope: 'Client' | 'Server';
 	--====================================================>
-	_WorldModel: WorldModelModule.WorldModelModule;
+	_WorldModel: WorldModelTypes.WorldModelModule;
 	--====================================================>
-	_ZoneParts: {[BasePart]: ZonePartProperties};
+	_ZoneParts: ZoneParts;
 	--====================================================>
 	_Classes: {
 		PlayerHandler: PlayerHandlerTypes.PlayerHandler;
@@ -348,24 +355,30 @@ export type ZoneCoreMetaData = {
 	};
 
 	--====================================================>
-	_Container:  ZoneContainer;
-	_Identifier: string;
 
 	_Trackers: {
-		Players: {[string]:   TrackedItemModule.TrackedItem};
-		Item:    {[Instance]: TrackedItemModule.TrackedItem};
+
+		Players: {
+			--==============================================>
+			PlayerHandler: PlayerHandlerTypes.PlayerHandler;
+			--==============================================>
+			TrackedItems: {[string]: TrackedItemTypes.TrackedItem};
+			--==============================================>
+			Entered: {Player};
+			Exited:  {Player};
+			--==============================================>
+		}?;
+
+		Items: {
+			--==============================================>
+			TrackedItems: {[Instance]: TrackedItemTypes.TrackedItem};
+			--==============================================>
+			Entered: {Instance};
+			Exited:  {Instance};
+			--==============================================>
+		}?;
+
 	};
-
-
-
-	--_Trackers: {
-	--	Players: {
-	--		[string]: {Player: Player, TrackedItem: TrackedItemModule.TrackedItem }
-	--	};
-	--	Item:    {
-	--		[Instance]: {Item: Instance, TrackedItem: TrackedItemModule.TrackedItem }
-	--	};
-	--};
 
 	_Instances: {
 		Holders:   {Instance};
@@ -398,10 +411,10 @@ export type ZoneCoreMetaData = {
 		--=========================================>
 	};
 	_ActiveTriggers: {
-		LocalPlayer: boolean;
-		Players:     boolean;
-		Items:       boolean;
-		Parts:       boolean;
+		['LocalPlayer']: boolean;
+		['Players']:     boolean;
+		['Items']:       boolean;
+		['Parts']:       boolean;
 	};
 	_States: {
 		Active:     boolean;
@@ -479,15 +492,17 @@ export type ZoneCoreModule = {
 
 	GetZoneParts: 
 		(self: ZoneCore) -> ({BasePart}, {Instance});
+	GetZonePartsArray: 
+		(self: ZoneCore, ZoneParts: ZoneParts) -> {BasePart};
 
 	AreZonePartsAllBlocks: 
-		(self: ZoneCore, ZoneParts: {BasePart}) -> boolean;
+		(self: ZoneCore, ZoneParts: ZoneParts) -> boolean;
 
 	GetCalculatedRegion: 
-		(self: ZoneCore, ArrayOfParts: {BasePart}, DontRound: boolean?) -> (Region3, Vector3, Vector3);
+		(self: ZoneCore, ZoneParts: ZoneParts, DontRound: boolean?) -> (Region3, Vector3, Vector3);
 
 	UpdateTrigger: 
-		(self: ZoneCore, Trigger: 'Players'|'LocalPlayer'|'Parts'|'Items', State: boolean) -> ();
+		(self: ZoneCore, Trigger: ZoneTriggers, State: boolean) -> ();
 	UpdateZone: 
 		(self: ZoneCore, Purpose: 'Parts'|'Region'|'All'|'Overlap'|'PartConnections'|'HolderConnections') -> ();
 	
@@ -501,17 +516,18 @@ export type ZoneCoreModule = {
 		(self: ZoneCore, Rate: number) -> ();
 
 	
-	
 	CheckTrigger: 
-		(self: ZoneCore, Trigger: 'Players'|'LocalPlayer'|'Parts'|'Items') -> ();
+		(self: ZoneCore, Trigger: ZoneTriggers) -> ();
 	CheckZone: 
-		(self: ZoneCore) -> ();
+		(self: ZoneCore, Trigger: ZoneTriggers) -> ();
 
 	--===========================================================================================================================>
 
 	OnZonePartUpdate: 
 		(self: ZoneCore, Purpose: 'Add'|'Remove', ZonePart: BasePart) -> ();
 	OnPostSimulation: 
+		(self: ZoneCore, Type: 'Sync'|'Desync', DeltaTime: number) -> ();
+	OnSimulation: 
 		(self: ZoneCore, Type: 'Sync'|'Desync', DeltaTime: number) -> ();
 
 	--====================================================>

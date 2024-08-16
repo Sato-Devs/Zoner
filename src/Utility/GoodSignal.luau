@@ -1,4 +1,3 @@
---!native
 --!strict
 -- -----------------------------------------------------------------------------
 --               Batched Yield-Safe Signal Implementation                     --
@@ -90,6 +89,7 @@ local freeRunnerThread: thread
 -- currently idle one.
 -- If there was a currently idle runner thread already, that's okay, that old
 -- one will just get thrown and eventually GCed.
+@native
 local function acquireRunnerThreadAndCallEventHandler(fn, ...)
 	local acquiredRunnerThread = freeRunnerThread
 	freeRunnerThread = nil :: any
@@ -101,6 +101,7 @@ end
 -- Coroutine runner that we create coroutines of. The coroutine can be
 -- repeatedly resumed with functions to run followed by the argument to run
 -- them with.
+@native
 local function runEventHandlerInFreeThread(...)
 	acquireRunnerThreadAndCallEventHandler(...)
 	while true do
@@ -127,6 +128,7 @@ end
 local Connection: ConnectionModule = {} :: ConnectionModule
 Connection.__index = Connection
 
+@native
 function Connection:Disconnect()
 	if not self.Connected then
 		return
@@ -262,6 +264,8 @@ end
 	signal:Fire("Hello", 25)
 	```
 ]=]
+
+@native
 function Signal.Connect(self: Signal, fn): Connection
 		
 		-- Create Connection Data:
@@ -394,6 +398,7 @@ end
 	signal:Fire("Hello", 32, {Test = "Test"}, true)
 	```
 ]=]
+@native
 function Signal.Fire(self: Signal, ...)
 	local item = self._handlerListHead
 	while item do
@@ -415,6 +420,7 @@ end
 	signal:FireDeferred("Hello")
 	```
 ]=]
+@native
 function Signal.FireDeferred(self: Signal, ...)
 	local item = self._handlerListHead
 	while item do

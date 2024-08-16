@@ -20,12 +20,12 @@ export type TrackableItem = Model | BasePart
 
 
 -- Create and Export Object Type:
-export type TrackedItem = typeof(
-	setmetatable({} :: TrackedItemMetaData, {} :: TrackedItemModule)
+export type ItemTracker = typeof(
+	setmetatable({} :: ItemTrackerMetaData, {} :: ItemTrackerModule)
 )
 
 -- Create and Export MetaData Type:
-export type TrackedItemMetaData = {
+export type ItemTrackerMetaData = {
 	--===========================================>
 	_Trove: Trove.Trove;
 	--===========================================>
@@ -44,55 +44,55 @@ export type TrackedItemMetaData = {
 }
 
 -- Create and Export Module Type:
-export type TrackedItemModule = {
+export type ItemTrackerModule = {
 	--===========================================>
 
 	New: 
-		(Item: TrackableItem, Detection: number?) -> TrackedItem,
+		<TrackableItem>(Item: TrackableItem, Detection: number?) -> ItemTracker,
 	Destroy: 
-		(self: TrackedItem) -> (),
+		(self: ItemTracker) -> (),
 
 	_Initialize: 
-		(self: TrackedItem) -> (),
+		(self: ItemTracker) -> (),
 	_SetData: 
-		(self: TrackedItem) -> (),
+		(self: ItemTracker) -> (),
 	_SetEvents: 
-		(self: TrackedItem) -> (),
+		(self: ItemTracker) -> (),
 
 	_GetCenterPart: 
-		(self: TrackedItem) -> BasePart,
+		(self: ItemTracker) -> BasePart,
 	_GetDetection: 
-		(self: TrackedItem) -> number,
+		(self: ItemTracker) -> number,
 	_GetFilterDescendants: 
-		(self: TrackedItem, Parts: {[BasePart]: boolean}) -> {BasePart},
+		(self: ItemTracker, Parts: {[BasePart]: boolean}) -> {BasePart},
 
 	_IsPartValidForItem: 
-		(self: TrackedItem, Part: BasePart) -> boolean,
+		(self: ItemTracker, Part: BasePart) -> boolean,
 
 	GetPosition: 
-		(self: TrackedItem, Part: BasePart?) -> Vector3,
+		(self: ItemTracker, Part: BasePart?) -> Vector3,
 
 	IsInsideRegion: 
-		(self: TrackedItem, Region: Region3?, RegionCFrame: CFrame?, RegionSize: Vector3?) -> boolean,
+		(self: ItemTracker, Region: Region3?, RegionCFrame: CFrame?, RegionSize: Vector3?) -> boolean,
 	IsInsideBoundBox: 
-		(self: TrackedItem, BoundMin: Vector3, BoundMax: Vector3) -> boolean,
+		(self: ItemTracker, BoundMin: Vector3, BoundMax: Vector3) -> boolean,
 
 
 	DictionaryHasTrackedParts: 
-		(self: TrackedItem, Dictionary: {[BasePart]: boolean}) -> boolean,
+		(self: ItemTracker, Dictionary: {[BasePart]: boolean}) -> boolean,
 
 	ArrayHasTrackedParts: 
-		(self: TrackedItem, Array: {BasePart}) -> boolean,
+		(self: ItemTracker, Array: {BasePart}) -> boolean,
 
 	SetDetection: 
-		(self: TrackedItem, NameOrId: (number | Enums.Detections)) -> (),
+		(self: ItemTracker, NameOrId: (number | Enums.Detections)) -> (),
 
 	FindPartInParts: 
-		(self: TrackedItem, Part: BasePart, Array: {BasePart}) -> number?,
+		(self: ItemTracker, Part: BasePart, Array: {BasePart}) -> number?,
 
 	--===========================================>
 
-	__index: TrackedItemModule,
+	__index: ItemTrackerModule,
 
 	--===========================================>
 }

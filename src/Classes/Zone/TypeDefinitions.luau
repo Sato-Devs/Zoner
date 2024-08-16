@@ -21,8 +21,11 @@ export type ZoneCoreModule   = ZoneTypes.ZoneCoreModule
 export type ZoneCore         = ZoneTypes.ZoneCore
 
 -- Create and Export Type:
-export type ZoneContainer    = ZoneTypes.ZoneContainer
-export type ZonerFolder      = ZoneTypes.ZonerFolder
+export type ZonePartProperties = ZoneTypes.ZonePartProperties
+export type ZoneTriggers       = ZoneTypes.ZoneTriggers
+export type ZoneContainer      = ZoneTypes.ZoneContainer
+export type ZonerFolder        = ZoneTypes.ZonerFolder
+export type ZoneParts          = ZoneTypes.ZoneParts
 
 --=======================================================================================================>
 
