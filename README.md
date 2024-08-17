@@ -15,3 +15,5 @@ rojo serve
 ```
 
 For more help, check out [the Rojo documentation](https://rojo.space/docs).
+
+I HATE Rojo. Everything is so ugly and it turned my organization into an abomination of folders and init files.
